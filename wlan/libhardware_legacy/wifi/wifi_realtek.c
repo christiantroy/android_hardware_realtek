@@ -82,7 +82,8 @@ static char iface[PROPERTY_VALUE_MAX];
 #define WIFI_DRIVER_FW_PATH_PARAM	"/sys/module/wlan/parameters/fwpath"
 #endif
 
-#define WIFI_DRIVER_LOADER_DELAY	1000000
+//#define WIFI_DRIVER_LOADER_DELAY	1000000
+#define WIFI_DRIVER_LOADER_DELAY	2500000
 
 static const char IFACE_DIR[]           = "/data/system/wpa_supplicant";
 #ifdef WIFI_DRIVER_MODULE_PATH
@@ -281,19 +282,24 @@ int is_wifi_driver_loaded() {
 
 int wifi_load_driver()
 {
-#ifdef WIFI_DRIVER_MODULE_PATH
     char driver_status[PROPERTY_VALUE_MAX];
-    int count = 100; /* wait at most 20 seconds for completion */
+    //int count = 100; /* wait at most 20 seconds for completion */
 
     if (is_wifi_driver_loaded()) {
         return 0;
     }
+    
+    unsigned char tmp_buf[200] = {0};
+    char *p_strstr  = NULL;
+    int  ret        = 0;
+    FILE *fp        = NULL;
+    int sleep_count = 0;
 
     if (insmod(DRIVER_MODULE_PATH, DRIVER_MODULE_ARG) < 0)
         return -1;
 
-    if (strcmp(FIRMWARE_LOADER,"") == 0) {
-        /* usleep(WIFI_DRIVER_LOADER_DELAY); */
+    /*if (strcmp(FIRMWARE_LOADER,"") == 0) {
+        usleep(WIFI_DRIVER_LOADER_DELAY);
         property_set(DRIVER_PROP_NAME, "ok");
     }
     else {
@@ -313,11 +319,38 @@ int wifi_load_driver()
     }
     property_set(DRIVER_PROP_NAME, "timeout");
     wifi_unload_driver();
-    return -1;
-#else
-    property_set(DRIVER_PROP_NAME, "ok");
-    return 0;
-#endif
+    return -1;*/
+    
+    do{
+       fp=fopen("/proc/net/wireless", "r");
+       if (!fp) {
+               LOGE("Failed to fopen file /proc/net/wireless\n");
+               return -1;
+       }
+       ret = fread(tmp_buf, 200, 1, fp);
+       if (ret<0) {
+               LOGE("Failed to read /proc/net/wireless");
+       }
+       fclose(fp);
+
+       p_strstr = strstr(tmp_buf, "wlan0");
+       if (p_strstr != NULL) {
+	       property_set(DRIVER_PROP_NAME, "ok");
+               break;
+       }
+       usleep(200000);
+
+   } while (sleep_count++ <=20);  /* wait at most 4 seconds for completion */
+
+   if(sleep_count > 20) {
+       LOGE("Timeout registering wlan0 device");
+       property_set(DRIVER_PROP_NAME, "timeout");
+       wifi_unload_driver(); 
+       return -1;
+   }
+
+   return 0;
+
 }
 
 int wifi_unload_driver()
