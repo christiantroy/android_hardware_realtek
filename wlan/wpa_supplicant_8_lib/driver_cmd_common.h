@@ -15,7 +15,7 @@
 #include "config_ssid.h"
 
 #define MAX_DRV_CMD_SIZE		248
-#define DRV_NUMBER_SEQUENTIAL_ERRORS	10
+#define DRV_NUMBER_SEQUENTIAL_ERRORS	4
 
 #define RSSI_CMD			"RSSI"
 #define LINKSPEED_CMD			"LINKSPEED"

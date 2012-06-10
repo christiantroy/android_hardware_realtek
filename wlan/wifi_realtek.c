@@ -133,12 +133,8 @@ int rtw_issue_driver_cmd_fd(int sockfd, const char *ifname, char *cmd, char *buf
 	priv_cmd.total_len = buf_len;
 	ifr.ifr_data = &priv_cmd;
 
-	/* Unsupported */
-	if (strcasecmp(cmd, "BLOCK 0") || strcasecmp(cmd, "BLOCK 1"))
-		return 1;
-
 	if ((ret = ioctl(sockfd, SIOCDEVPRIVATE + 1, &ifr)) < 0) {
-		LOGE("%s: failed to issue private command \"%s\": error:%d %s", __func__, cmd, errno, strerror(errno));
+		LOGE("%s: failed to issue private command: error:%d %s", __func__, errno, strerror(errno));
 	}else {
 		ret = 0;
 		if ((strcasecmp(cmd, "LINKSPEED") == 0) ||
