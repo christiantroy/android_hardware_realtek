@@ -31,7 +31,7 @@
 #include <linux/rtnetlink.h>
 #include <netpacket/packet.h>
 #include <linux/filter.h>
-#include "nl80211_copy.h"
+#include "nl80211.h"
 
 #include "common.h"
 #include "eloop.h"
